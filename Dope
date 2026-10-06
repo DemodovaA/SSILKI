@@ -1,0 +1,125 @@
+class EventCard {
+  // 1. Объявляем приватное свойство для хранения исходного английского типа
+  #type; 
+
+  // Конструктор принимает title, date, тип и опциональный колбэк onDismiss
+  constructor(title, date, type, onDismiss = null) {
+    this.title = title;
+    this.date = date;
+    this.type = type; // Вызывает сеттер, который выполнит проверку типа
+    this.onDismiss = onDismiss; // Сохраняем колбэк в свойство
+    this.element = null;
+  }
+
+  // Сеттер: отвечает за безопасность (проверяет правильность английского слова)
+  set type(value) {
+    if (value === 'lecture' || value === 'deadline' || value === 'meeting') {
+      this.#type = value; // Сохраняем проверенное английское слово
+    } else {
+      throw new Error(`Недопустимый тип события: "${value}". Разрешены только: lecture, deadline, meeting`);
+    }
+  }
+
+  // Геттер: отвечает за отображение (переводит сохраненное слово на русский язык «на лету»)
+  get type() {
+    if (this.#type === 'lecture') {
+      return 'Лекция';
+    } else if (this.#type === 'deadline') {
+      return 'Дедлайн';
+    } else if (this.#type === 'meeting') {
+      return 'Встреча';
+    }
+    return this.#type;
+  }
+
+  // Возвращает строковую HTML-разметку карточки
+  createTemplate() {
+    // Если колбэк передан, создаем разметку для кнопки "Скрыть"
+    const dismissButtonTemplate = this.onDismiss 
+      ? '<button class="event-card__dismiss-btn" type="button">Скрыть</button>' 
+      : '';
+
+    return `
+      <article class="event-card">
+        <h3 class="event-card__title">${this.title}</h3>
+        <p class="event-card__date">${this.date}</p>
+        <span class="event-card__type">${this.type}</span>
+        ${dismissButtonTemplate}
+      </article>
+    `.trim();
+  }
+
+  // Создаёт реальный DOM-элемент из шаблона
+  createElement() {
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = this.createTemplate(); // Вызов с маленькой буквы
+    this.element = wrapper.firstElementChild;
+    
+    // Сразу вешаем обработчики событий (Задача 2)
+    this.addEventListeners();
+    
+    return this.element;
+  }
+
+  // Метод для добавления обработчиков событий (Задача 2)
+  addEventListeners() {
+    // 1. Клик на карточку целиком переключает класс news-card--expanded
+    this.element.addEventListener('click', (evt) => {
+      // Исключаем клик по кнопке "Скрыть", чтобы при её нажатии карточка не разворачивалась
+      if (evt.target.closest('.event-card__dismiss-btn')) {
+        return;
+      }
+      this.element.classList.toggle('news-card--expanded');
+    });
+
+    // 2. Если кнопка "Скрыть" отрендерилась, вешаем клик на неё
+    if (this.onDismiss) {
+      const dismissBtn = this.element.querySelector('.event-card__dismiss-btn');
+      dismissBtn.addEventListener('click', () => {
+        // Вызываем переданный колбэк и передаём в него текущий экземпляр карточки (this)
+        this.onDismiss(this);
+      });
+    }
+  }
+
+  // Добавляет карточку в контейнер на странице
+  render(container) {
+    if (!this.element) {
+      this.createElement();
+    }
+    container.append(this.element);
+  }
+}
+
+НОВОЕ
+  createElement() {
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = this.createTemplate();
+    this.element = wrapper.firstElementChild;
+    return this.element;
+  }
+
+  addEventListeners() {
+    // Клик на карточку целиком (функционал полностью сохранен через evt)
+    this.element.addEventListener('click', (evt) => {
+      if (evt.target.closest('.event-card__dismiss-btn')) {
+        return;
+      }
+      this.element.classList.toggle('news-card--expanded');
+    });
+
+    // Клик на кнопку "Скрыть"
+    if (this.onDismiss) {
+      const dismissBtn = this.element.querySelector('.event-card__dismiss-btn');
+      dismissBtn.addEventListener('click', () => {
+        this.onDismiss(this);
+      });
+    }
+  }
+
+  render(container) {
+    this.createElement();
+    this.addEventListeners(); // Теперь вызывается здесь, как на фото
+    container.appendChild(this.element); // Используется appendChild, как на фото
+  }
+
